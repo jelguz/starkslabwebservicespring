@@ -661,6 +661,51 @@ public class ToolController {
 		
 	}
 	
+
+	@RequestMapping(value = "/checkdownload/{tool_id}/{user_id}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public boolean checkUserDownload (@PathVariable("tool_id") int tool_id, @PathVariable("user_id") String user_id) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"SELECT tool_id, person_id " +
+					"FROM tool_downloads " +
+					"WHERE tool_id = ? AND person_id = ?");
+			preparedStatement.setInt(1, tool_id);
+			preparedStatement.setString(2, user_id);
+			ResultSet resultSet = preparedStatement.executeQuery();
+			if (resultSet.next()) {
+				connection.close();
+				connection = null;
+				return true;
+			} else {
+				connection.close();
+				connection = null;
+				return false;
+			}
+			
+			
+		} catch (SQLException e) {
+			
+			System.out.println(e.getMessage());
+			return false;
+			
+		} finally {
+
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+
+		}
+		
+	}
+	
 	@RequestMapping(value = "/rate", method = RequestMethod.POST)
 	@CrossOrigin(origins="*")
 	public boolean addReview(@RequestBody ReviewRequest reviewRequest) throws ClassNotFoundException, SQLException {
