@@ -4,6 +4,7 @@ public class Category {
 	public int id;
 	public String name;
 	public String description;
+	public int toolCount;
 
 	public Category() {
 	}
@@ -21,6 +22,10 @@ public class Category {
 	public void setId(int id) {
 		this.id = id;
 	}
+	
+	public void setToolCount(int count) {
+		this.toolCount = count;
+	}
 
 	public String getName() {
 		return name;
@@ -37,4 +42,11 @@ public class Category {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	
+	public int getToolCount() {
+		return toolCount;
+	}
+
+	
+	
 }

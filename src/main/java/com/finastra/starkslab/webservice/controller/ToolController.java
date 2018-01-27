@@ -319,12 +319,12 @@ public class ToolController {
 		ResultSet resultSet = preparedStatement.executeQuery();
 		if (resultSet.next()) {
 			Version version = new Version();
-			version.setPrefix(resultSet.getString(2));
-			version.setMajor(resultSet.getInt(3));
-			version.setMinor(resultSet.getInt(4));
-			version.setBuilt(resultSet.getInt(5));
-			version.setRevision(resultSet.getInt(6));
-			version.setDownloadLink(resultSet.getString(2));
+			version.setPrefix(resultSet.getString(1));
+			version.setMajor(resultSet.getInt(2));
+			version.setMinor(resultSet.getInt(3));
+			version.setBuilt(resultSet.getInt(4));
+			version.setRevision(resultSet.getInt(5));
+			version.setDownloadLink(resultSet.getString(6));
 			connection.close();
 			connection = null;
 			return version;
@@ -348,21 +348,21 @@ public class ToolController {
 		if (resultSet.next()) {
 			List<Version> versions = new ArrayList<Version>();
 			Version version = new Version();
-			version.setPrefix(resultSet.getString(2));
-			version.setMajor(resultSet.getInt(3));
-			version.setMinor(resultSet.getInt(4));
-			version.setBuilt(resultSet.getInt(5));
-			version.setRevision(resultSet.getInt(6));
-			version.setDownloadLink(resultSet.getString(2));
+			version.setPrefix(resultSet.getString(1));
+			version.setMajor(resultSet.getInt(2));
+			version.setMinor(resultSet.getInt(3));
+			version.setBuilt(resultSet.getInt(4));
+			version.setRevision(resultSet.getInt(5));
+			version.setDownloadLink(resultSet.getString(6));
 			versions.add(version);
 			while (resultSet.next()) {
 				version = new Version();
-				version.setPrefix(resultSet.getString(2));
-				version.setMajor(resultSet.getInt(3));
-				version.setMinor(resultSet.getInt(4));
-				version.setBuilt(resultSet.getInt(5));
-				version.setRevision(resultSet.getInt(6));
-				version.setDownloadLink(resultSet.getString(2));
+				version.setPrefix(resultSet.getString(1));
+				version.setMajor(resultSet.getInt(2));
+				version.setMinor(resultSet.getInt(3));
+				version.setBuilt(resultSet.getInt(4));
+				version.setRevision(resultSet.getInt(5));
+				version.setDownloadLink(resultSet.getString(6));
 				versions.add(version);
 			}
 			connection.close();
@@ -481,6 +481,21 @@ public class ToolController {
 		preparedStatement.setInt(3, page - 1);
 		preparedStatement.setInt(4, count);
 		preparedStatement.setInt(5, page);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		List<Tool> tools = populateToolList(resultSet);
+		connection.close();
+		connection = null;
+		return tools;
+	}
+	
+	@RequestMapping(value = "/getall", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public List<Tool> getToolsAll() throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b order by a.rating_average desc) a ");
 		ResultSet resultSet = preparedStatement.executeQuery();
 		List<Tool> tools = populateToolList(resultSet);
 		connection.close();
@@ -706,6 +721,50 @@ public class ToolController {
 		
 	}
 	
+	@RequestMapping(value = "/checkreview/{tool_id}/{user_id}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public boolean checkUserReview (@PathVariable("tool_id") int tool_id, @PathVariable("user_id") String user_id) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"SELECT tool_id, person_id " +
+					"FROM tool_reviews " +
+					"WHERE tool_id = ? AND person_id = ?");
+			preparedStatement.setInt(1, tool_id);
+			preparedStatement.setString(2, user_id);
+			ResultSet resultSet = preparedStatement.executeQuery();
+			if (resultSet.next()) {
+				connection.close();
+				connection = null;
+				return true;
+			} else {
+				connection.close();
+				connection = null;
+				return false;
+			}
+			
+			
+		} catch (SQLException e) {
+			
+			System.out.println(e.getMessage());
+			return false;
+			
+		} finally {
+
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+
+		}
+		
+	}
+	
 	@RequestMapping(value = "/rate", method = RequestMethod.POST)
 	@CrossOrigin(origins="*")
 	public boolean addReview(@RequestBody ReviewRequest reviewRequest) throws ClassNotFoundException, SQLException {
@@ -757,6 +816,7 @@ public class ToolController {
 			tool.setWishMaster(getWishMaster(tool.getId()));
 			tool.setWishers(getWishers(tool.getId()));
 			tool.setCategories(getCategories(tool.getId()));
+			tool.setCategoryString();
 			tool.setReviews(getReviews(tool.getId()));
 			tool.setCurrentVersion(getCurrentVersion(tool.getId()));
 			tool.setVersions(getVersions(tool.getId()));
@@ -778,6 +838,7 @@ public class ToolController {
 				tool.setWishMaster(getWishMaster(tool.getId()));
 				tool.setWishers(getWishers(tool.getId()));
 				tool.setCategories(getCategories(tool.getId()));
+				tool.setCategoryString();
 				tool.setReviews(getReviews(tool.getId()));
 				tool.setCurrentVersion(getCurrentVersion(tool.getId()));
 				tool.setVersions(getVersions(tool.getId()));

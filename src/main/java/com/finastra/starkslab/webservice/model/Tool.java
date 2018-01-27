@@ -28,6 +28,9 @@ public class Tool {
 	private List<Media> medias;
 	private String tags[];
 	private int downloads;
+	private String categoryString;
+	private String tagsString;
+
 
 	public Tool() {
 	}
@@ -199,4 +202,29 @@ public class Tool {
 	public void setDownloads(int downloads) {
 		this.downloads = downloads;
 	}
+	
+	public void setCategoryString() {	/* Special Functions ~ Mark */
+		categoryString = "";
+		if (categories != null)
+			for (Category category : categories){
+				categoryString = categoryString + category.name + ',';
+			}	
+	}
+
+	public String getCategoryString(){    /* Special Functions ~ Mark */
+		return categoryString;
+	}
+	
+	public void setTagsString() {	/* Special Functions ~ Mark */
+		tagsString = "";
+		if (tags != null)
+			for (String tag : tags){
+				tagsString = tagsString + tag + ',';
+			}	
+	}
+
+	public String getTagsString(){    /* Special Functions ~ Mark */
+		return tagsString;
+	}
+	
 }
