@@ -12,7 +12,7 @@ public class Review {
 	private int id;
 	private Person person;
 	private Date date;
-	private byte rating;
+	private float rating;
 	private String text;
 
 	public Review() {
@@ -51,11 +51,11 @@ public class Review {
 		this.date = date;
 	}
 
-	public byte getRating() {
+	public float getRating() {
 		return rating;
 	}
 
-	public void setRating(byte rating) {
+	public void setRating(float rating) {
 		this.rating = rating;
 	}
 

@@ -30,6 +30,10 @@ public class Tool {
 	private int downloads;
 	private String categoryString;
 	private String tagsString;
+	private String type;
+	private String ideaAuthor;
+	private String status;
+	private int upvotes;
 
 
 	public Tool() {
@@ -37,7 +41,8 @@ public class Tool {
 
 	public Tool(int id, String name, String description, Icon icon, String text, List<Person> developers,
 			Person wishMaster, List<Person> wishers, List<Category> categories, List<Review> reviews, float rating, Date launchDate,
-			Date updateDate, Version currentVersion, List<Version> versions, List<Media> medias, String[] tags, int downloads) {
+			Date updateDate, Version currentVersion, List<Version> versions, List<Media> medias, String[] tags, int downloads, String type,
+			String ideaAuthor, String status, int upvotes) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -57,10 +62,30 @@ public class Tool {
 		this.medias = medias;
 		this.tags = tags;
 		this.downloads = downloads;
+		this.type = type;
+		this.ideaAuthor = ideaAuthor;
+		this.status = status;
+		this.upvotes = upvotes;
 	}
 
 	public int getId() {
 		return id;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public int getUpvotes() {
+		return upvotes;
+	}
+
+	public void setUpvotes(int upvotes) {
+		this.upvotes = upvotes;
 	}
 
 	public void setId(int id) {
@@ -225,6 +250,22 @@ public class Tool {
 
 	public String getTagsString(){    /* Special Functions ~ Mark */
 		return tagsString;
+	}
+	
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+	
+	public String getIdeaAuthor() {
+		return ideaAuthor;
+	}
+
+	public void setIdeaAuthor(String ideaAuthor) {
+		this.ideaAuthor = ideaAuthor;
 	}
 	
 }

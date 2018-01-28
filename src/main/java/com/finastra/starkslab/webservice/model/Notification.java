@@ -1,35 +1,56 @@
 package com.finastra.starkslab.webservice.model;
 
 public class Notification {
-	private String newsfeedId;
-	private String personId;
+	private int newsfeedId;
+	private String developer;
 	private int isSeen;
-	private String timestamp;
+	private String type;
+	private String privacy;
+	private String toolId;
+	private String toolName;
+	private String originator;
+	private String originatorFirstName;
+	private String originatorLastName;
+	private String activityDate;
+	private String rating;
+	private String text;
 
 	public Notification() {
 	}
-
-	public Notification(String newsfeedId, String personId, int isSeen, String timestamp) {
+	
+	public Notification(int newsfeedId, String developer, int isSeen, String type, String privacy, String toolId,
+			String toolName, String originator, String originatorFirstName, String originatorLastName,
+			String activityDate, String rating, String text) {
+		super();
 		this.newsfeedId = newsfeedId;
-		this.personId = personId;
+		this.developer = developer;
 		this.isSeen = isSeen;
-		this.timestamp = timestamp;
+		this.type = type;
+		this.privacy = privacy;
+		this.toolId = toolId;
+		this.toolName = toolName;
+		this.originator = originator;
+		this.originatorFirstName = originatorFirstName;
+		this.originatorLastName = originatorLastName;
+		this.activityDate = activityDate;
+		this.rating = rating;
+		this.text = text;
 	}
 
-	public String getNewsfeedId() {
+	public int getNewsfeedId() {
 		return newsfeedId;
 	}
 
-	public void setNewsfeedId(String newsfeedId) {
+	public void setNewsfeedId(int newsfeedId) {
 		this.newsfeedId = newsfeedId;
 	}
 
-	public String getPersonId() {
-		return personId;
+	public String getDeveloper() {
+		return developer;
 	}
 
-	public void setPersonId(String personId) {
-		this.personId = personId;
+	public void setDeveloper(String developer) {
+		this.developer = developer;
 	}
 
 	public int getIsSeen() {
@@ -40,12 +61,84 @@ public class Notification {
 		this.isSeen = isSeen;
 	}
 
-	public String getTimestamp() {
-		return timestamp;
+	public String getType() {
+		return type;
 	}
 
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
+	public void setType(String type) {
+		this.type = type;
 	}
 
+	public String getPrivacy() {
+		return privacy;
+	}
+
+	public void setPrivacy(String privacy) {
+		this.privacy = privacy;
+	}
+
+	public String getToolId() {
+		return toolId;
+	}
+
+	public void setToolId(String toolId) {
+		this.toolId = toolId;
+	}
+
+	public String getToolName() {
+		return toolName;
+	}
+
+	public void setToolName(String toolName) {
+		this.toolName = toolName;
+	}
+
+	public String getOriginator() {
+		return originator;
+	}
+
+	public void setOriginator(String originator) {
+		this.originator = originator;
+	}
+
+	public String getOriginatorFirstName() {
+		return originatorFirstName;
+	}
+
+	public void setOriginatorFirstName(String originatorFirstName) {
+		this.originatorFirstName = originatorFirstName;
+	}
+
+	public String getOriginatorLastName() {
+		return originatorLastName;
+	}
+
+	public void setOriginatorLastName(String originatorLastName) {
+		this.originatorLastName = originatorLastName;
+	}
+
+	public String getActivityDate() {
+		return activityDate;
+	}
+
+	public void setActivityDate(String activityDate) {
+		this.activityDate = activityDate;
+	}
+
+	public String getRating() {
+		return rating;
+	}
+
+	public void setRating(String rating) {
+		this.rating = rating;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+	
 }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,9 +52,9 @@ public class CategoryController {
 		return null;
 	}
 	
-	@RequestMapping(value = "/get/listdetails", method = RequestMethod.GET)
+	@RequestMapping(value = "/get/listdetails/{status}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
-	public List<Category> getCategoriesDetails() throws ClassNotFoundException, SQLException {
+	public List<Category> getCategoriesDetails(@PathVariable("status") String status) throws ClassNotFoundException, SQLException {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
@@ -66,14 +67,14 @@ public class CategoryController {
 			category.setId(resultSet.getInt(1));
 			category.setName(resultSet.getString(2));
 			category.setDescription(resultSet.getString(3));
-			category.setToolCount(getCategoriesToolsCount(category.getId()));
+			category.setToolCount(getCategoriesToolsCountStatus(category.getId(), status));
 			categories.add(category);
 			while (resultSet.next()) {
 				category = new Category();
 				category.setId(resultSet.getInt(1));
 				category.setName(resultSet.getString(2));
 				category.setDescription(resultSet.getString(3));
-				category.setToolCount(getCategoriesToolsCount(category.getId()));
+				category.setToolCount(getCategoriesToolsCountStatus(category.getId(), status));
 				categories.add(category);
 			}
 			connection.close();
@@ -91,6 +92,27 @@ public class CategoryController {
 		preparedStatement = connection.prepareStatement(
 				"select count(*) from tool_categories where category_id = ?");
 		preparedStatement.setInt(1, categoryId);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		int count = 0;
+		if (resultSet.next()) {
+			count =  resultSet.getInt(1);
+			connection.close();
+			connection = null;
+		}
+		//connection.close();
+		//connection = null;
+		return count;
+	}
+	
+	public int getCategoriesToolsCountStatus(int categoryId, String status) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+				"select count(*) from tool_categories a inner join tools b " +
+		        "on a.tool_id = b.id "+
+				"where a.category_id = ? and b.status = ?");
+		preparedStatement.setInt(1, categoryId);
+		preparedStatement.setString(2, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
 		int count = 0;
 		if (resultSet.next()) {

@@ -1,6 +1,7 @@
 package com.finastra.starkslab.webservice.controller;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,14 +29,13 @@ import com.finastra.starkslab.webservice.provider.ConnectionProvider;
 @RestController
 @RequestMapping("/rest/tools")
 public class ToolController {
-
 	@RequestMapping(value = "/get/{toolId}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
 	public Tool getTool(@PathVariable("toolId") int toolId) throws ClassNotFoundException, SQLException {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+				"select id, name, description, text, launch_date, update_date, type, download_count, rating_average "
 				+ "from view_tools_001 "
 				+ "where id = ?");
 		preparedStatement.setInt(1, toolId);
@@ -48,8 +48,9 @@ public class ToolController {
 			tool.setText(resultSet.getString(4));
 			tool.setLaunchDate(resultSet.getDate(5));
 			tool.setUpdateDate(resultSet.getDate(6));
-			tool.setDownloads(resultSet.getInt(7));
-			tool.setRating(resultSet.getInt(8));
+			tool.setType(resultSet.getString(7));
+			tool.setDownloads(resultSet.getInt(8));
+			tool.setRating(resultSet.getFloat(9));
 			tool.setIcon(getIcon(toolId));
 			tool.setDevelopers(getDevelopers(toolId));
 			tool.setWishMaster(getWishMaster(toolId));
@@ -60,6 +61,7 @@ public class ToolController {
 			tool.setVersions(getVersions(toolId));
 			tool.setMedias(getMedias(toolId));
 			tool.setTags(getTags(toolId));
+			
 			connection.close();
 			connection = null;
 			return tool;
@@ -248,7 +250,7 @@ public class ToolController {
 			person.setMiddleName(resultSet.getString(5));
 			review.setUser(person);
 			review.setDate(resultSet.getDate(6));
-			review.setRating(resultSet.getByte(7));
+			review.setRating(resultSet.getFloat(7));
 			review.setText(resultSet.getString(8));
 			reviews.add(review);
 			while (resultSet.next()) {
@@ -261,7 +263,7 @@ public class ToolController {
 				person.setMiddleName(resultSet.getString(5));
 				review.setUser(person);
 				review.setDate(resultSet.getDate(6));
-				review.setRating(resultSet.getByte(7));
+				review.setRating(resultSet.getFloat(7));
 				review.setText(resultSet.getString(8));
 				reviews.add(review);
 			}
@@ -488,14 +490,47 @@ public class ToolController {
 		return tools;
 	}
 	
+	@RequestMapping(value = "/get/category/{categoryId}/{status}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public List<Tool> getToolsCategoryStatus(@PathVariable("categoryId") int categoryId, @PathVariable("status") String status) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+						"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+						+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ? and a.status = ?) a ");
+		preparedStatement.setInt(1, categoryId);
+		preparedStatement.setString(2, status);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		List<Tool> tools = populateToolList(resultSet);
+		connection.close();
+		connection = null;
+		return tools;
+	}
+	
 	@RequestMapping(value = "/getall", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
 	public List<Tool> getToolsAll() throws ClassNotFoundException, SQLException {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
 				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b order by a.rating_average desc) a ");
+		ResultSet resultSet = preparedStatement.executeQuery();
+		List<Tool> tools = populateToolList(resultSet);
+		connection.close();
+		connection = null;
+		return tools;
+	}
+	
+	@RequestMapping(value = "/getall/{status}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public List<Tool> getToolsAllLive(@PathVariable("status") String status) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b WHERE status = ? order by a.rating_average desc) a ");
+		preparedStatement.setString(1, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
 		List<Tool> tools = populateToolList(resultSet);
 		connection.close();
@@ -676,6 +711,38 @@ public class ToolController {
 		
 	}
 	
+	@RequestMapping(value = "/upvote/{tool_id}/{user_id}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public boolean addUpvoteCount (@PathVariable("tool_id") String tool_id, @PathVariable("user_id") String user_id) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"call starkslabdb.proc_add_upvote_count(?, ?)");
+			preparedStatement.setString(1, tool_id);
+			preparedStatement.setString(2, user_id);
+			preparedStatement.executeUpdate();
+			return true;
+			
+		} catch (SQLException e) {
+			
+			System.out.println(e.getMessage());
+			return false;
+			
+		} finally {
+
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+
+		}
+		
+	}
 
 	@RequestMapping(value = "/checkdownload/{tool_id}/{user_id}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
@@ -688,6 +755,50 @@ public class ToolController {
 			preparedStatement = connection.prepareStatement(
 					"SELECT tool_id, person_id " +
 					"FROM tool_downloads " +
+					"WHERE tool_id = ? AND person_id = ?");
+			preparedStatement.setInt(1, tool_id);
+			preparedStatement.setString(2, user_id);
+			ResultSet resultSet = preparedStatement.executeQuery();
+			if (resultSet.next()) {
+				connection.close();
+				connection = null;
+				return true;
+			} else {
+				connection.close();
+				connection = null;
+				return false;
+			}
+			
+			
+		} catch (SQLException e) {
+			
+			System.out.println(e.getMessage());
+			return false;
+			
+		} finally {
+
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+
+		}
+		
+	}
+	
+	@RequestMapping(value = "/checkupvote/{tool_id}/{user_id}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public boolean checkUserUpvote (@PathVariable("tool_id") int tool_id, @PathVariable("user_id") String user_id) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"SELECT tool_id, person_id " +
+					"FROM tool_wishers " +
 					"WHERE tool_id = ? AND person_id = ?");
 			preparedStatement.setInt(1, tool_id);
 			preparedStatement.setString(2, user_id);
@@ -799,6 +910,41 @@ public class ToolController {
 		}
 	}
 	
+	@RequestMapping(value = "/rate/update", method = RequestMethod.POST)
+	@CrossOrigin(origins="*")
+	public boolean updateReview(@RequestBody ReviewRequest reviewRequest) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"update tool_reviews set rating = ?, text = ? " +
+					"where tool_id = ? and person_id = ?");
+			preparedStatement.setInt(1, reviewRequest.getRating());
+			preparedStatement.setString(2, reviewRequest.getText());
+			preparedStatement.setInt(3, reviewRequest.getId());
+			preparedStatement.setString(4, reviewRequest.getPersonId());
+			preparedStatement.executeUpdate();
+			return true;
+			
+		} catch (SQLException e) {
+			
+			System.out.println(e.getMessage());
+			return false;
+			
+		} finally {
+
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+
+		}
+	}
+	
 	private List<Tool> populateToolList (ResultSet resultSet) throws ClassNotFoundException, SQLException {
 		if (resultSet.next()) {
 			List<Tool> tools = new ArrayList<Tool>();
@@ -810,7 +956,7 @@ public class ToolController {
 			tool.setLaunchDate(resultSet.getDate(5));
 			tool.setUpdateDate(resultSet.getDate(6));
 			tool.setDownloads(resultSet.getInt(7));
-			tool.setRating(resultSet.getInt(8));
+			tool.setRating(resultSet.getFloat(8));
 			tool.setIcon(getIcon(tool.getId()));
 			tool.setDevelopers(getDevelopers(tool.getId()));
 			tool.setWishMaster(getWishMaster(tool.getId()));
@@ -822,6 +968,8 @@ public class ToolController {
 			tool.setVersions(getVersions(tool.getId()));
 			tool.setMedias(getMedias(tool.getId()));
 			tool.setTags(getTags(tool.getId()));
+			tool.setStatus(resultSet.getString(9));
+			tool.setUpvotes(resultSet.getInt(10));
 			tools.add(tool);
 			while (resultSet.next()) {
 				tool = new Tool();
@@ -832,7 +980,7 @@ public class ToolController {
 				tool.setLaunchDate(resultSet.getDate(5));
 				tool.setUpdateDate(resultSet.getDate(6));
 				tool.setDownloads(resultSet.getInt(7));
-				tool.setRating(resultSet.getInt(8));
+				tool.setRating(resultSet.getFloat(8));
 				tool.setIcon(getIcon(tool.getId()));
 				tool.setDevelopers(getDevelopers(tool.getId()));
 				tool.setWishMaster(getWishMaster(tool.getId()));
@@ -844,11 +992,49 @@ public class ToolController {
 				tool.setVersions(getVersions(tool.getId()));
 				tool.setMedias(getMedias(tool.getId()));
 				tool.setTags(getTags(tool.getId()));
+				tool.setStatus(resultSet.getString(9));
+				tool.setUpvotes(resultSet.getInt(10));
 				tools.add(tool);
 			}
 			return tools;
 		}
 		return null;
+	}
+	
+	@RequestMapping(value = "/add/idea", method = RequestMethod.POST)
+	@CrossOrigin(origins="*")
+	public boolean addPerson(@RequestBody Tool tool) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"INSERT INTO tools "
+					+ "(name, description, status, idea_author) "
+					+ "VALUES(?, ?, ?, ?)");
+			preparedStatement.setString(1, tool.getName());
+			preparedStatement.setString(2, tool.getDescription());
+			preparedStatement.setString(3, "idea");
+			preparedStatement.setString(4, tool.getIdeaAuthor());
+			int affectedRows = preparedStatement.executeUpdate();
+	        if (affectedRows == 0) {
+	        	return false;
+	        } 
+	        
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+			return false;
+		} finally {
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+		}
+		return true;
+
 	}
 	
 }

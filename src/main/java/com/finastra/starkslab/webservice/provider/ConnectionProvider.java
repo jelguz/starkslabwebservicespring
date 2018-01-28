@@ -6,9 +6,10 @@ import java.sql.SQLException;
 
 public class ConnectionProvider {
 	private static String className = "com.mysql.cj.jdbc.Driver";
-	private static String url = "jdbc:mysql://mancswcbman0128:3306/starkslabdb";
-	private static String username = "remoteuser";
-	private static String password = "remoteuser";
+	private static String url = "jdbc:mysql://localhost:3306/starkslabdb?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	//jdbc:mysql://localhost/db?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+	private static String username = "root";
+	private static String password = "root";
 	
 	public ConnectionProvider() {
 	}
