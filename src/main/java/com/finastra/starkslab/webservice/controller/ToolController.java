@@ -1,10 +1,10 @@
 package com.finastra.starkslab.webservice.controller;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,8 +23,10 @@ import com.finastra.starkslab.webservice.model.Person;
 import com.finastra.starkslab.webservice.model.Review;
 import com.finastra.starkslab.webservice.model.ReviewRequest;
 import com.finastra.starkslab.webservice.model.Tool;
+import com.finastra.starkslab.webservice.model.ToolCategory;
 import com.finastra.starkslab.webservice.model.Version;
 import com.finastra.starkslab.webservice.provider.ConnectionProvider;
+
 
 @RestController
 @RequestMapping("/rest/tools")
@@ -94,6 +96,27 @@ public class ToolController {
 		connection.close();
 		connection = null;
 		return null;
+	}
+	
+	@RequestMapping(value = "/get/checkupvote/{username}/{toolId}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public boolean getIsUpvotedByDeveloper(@PathVariable("username") String username, @PathVariable("toolId") int toolId) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+				"SELECT t.id, t.name, w.person_id "
+				+ "FROM tools t INNER JOIN tool_wishers w "
+				+ "ON t.id = w.tool_id "
+				+ "where w.person_id = ? and t.id = ?");
+		preparedStatement.setString(1, username);
+		preparedStatement.setInt(2, toolId);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		if (resultSet.next()) {
+			return true;
+		}
+		connection.close();
+		connection = null;
+		return false;
 	}
 
 	@RequestMapping(value = "/get/developers/{toolId}", method = RequestMethod.GET)
@@ -468,14 +491,15 @@ public class ToolController {
 		connection = null;
 		return null;
 	}
-
+	
+	/*
 	@RequestMapping(value = "/get/category/{categoryId}/{count}/{page}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
 	public List<Tool> getToolsCategory(@PathVariable("categoryId") int categoryId, @PathVariable("count") int count, @PathVariable("page") int page) throws ClassNotFoundException, SQLException {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
 				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ?) a "
 				+ "where row_index between (? * ?) + 1 and ? * ?");
 		preparedStatement.setInt(1, categoryId);
@@ -488,7 +512,7 @@ public class ToolController {
 		connection.close();
 		connection = null;
 		return tools;
-	}
+	}*/
 	
 	@RequestMapping(value = "/get/category/{categoryId}/{status}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
@@ -496,12 +520,29 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-						"select id, name, description, text, launch_date, update_date, download_count, rating_average "
+						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
 						+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ? and a.status = ?) a ");
 		preparedStatement.setInt(1, categoryId);
 		preparedStatement.setString(2, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
 		List<Tool> tools = populateToolList(resultSet);
+		connection.close();
+		connection = null;
+		return tools;
+	}
+	
+	@RequestMapping(value = "/get/category/{categoryId}/{status}/{username}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public List<Tool> getToolsCategoryStatusVote(@PathVariable("categoryId") int categoryId, @PathVariable("status") String status, @PathVariable("username") String username) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+						+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ? and a.status = ?) a ");
+		preparedStatement.setInt(1, categoryId);
+		preparedStatement.setString(2, status);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		List<Tool> tools = populateToolListVoted(resultSet, username);
 		connection.close();
 		connection = null;
 		return tools;
@@ -524,7 +565,7 @@ public class ToolController {
 	
 	@RequestMapping(value = "/getall/{status}", method = RequestMethod.GET)
 	@CrossOrigin(origins="*")
-	public List<Tool> getToolsAllLive(@PathVariable("status") String status) throws ClassNotFoundException, SQLException {
+	public List<Tool> getToolsAllStatus(@PathVariable("status") String status) throws ClassNotFoundException, SQLException {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
@@ -533,6 +574,22 @@ public class ToolController {
 		preparedStatement.setString(1, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
 		List<Tool> tools = populateToolList(resultSet);
+		connection.close();
+		connection = null;
+		return tools;
+	}
+	
+	@RequestMapping(value = "/getall/{status}/{username}", method = RequestMethod.GET)
+	@CrossOrigin(origins="*")
+	public List<Tool> getToolsAllStatusUser(@PathVariable("status") String status, @PathVariable("username") String username) throws ClassNotFoundException, SQLException {
+		Connection connection = ConnectionProvider.getConnection();
+		PreparedStatement preparedStatement;
+		preparedStatement = connection.prepareStatement(
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b WHERE status = ? order by a.rating_average desc) a ");
+		preparedStatement.setString(1, status);
+		ResultSet resultSet = preparedStatement.executeQuery();
+		List<Tool> tools = populateToolListVoted(resultSet, username);
 		connection.close();
 		connection = null;
 		return tools;
@@ -1001,9 +1058,89 @@ public class ToolController {
 		return null;
 	}
 	
+	private List<Tool> populateToolListVoted (ResultSet resultSet, String username) throws ClassNotFoundException, SQLException {
+		if (resultSet.next()) {
+			List<Tool> tools = new ArrayList<Tool>();
+			Tool tool = new Tool();
+			tool.setId(resultSet.getInt(1));
+			tool.setName(resultSet.getString(2));
+			tool.setDescription(resultSet.getString(3));
+			tool.setText(resultSet.getString(4));
+			tool.setLaunchDate(resultSet.getDate(5));
+			tool.setUpdateDate(resultSet.getDate(6));
+			tool.setDownloads(resultSet.getInt(7));
+			tool.setRating(resultSet.getFloat(8));
+			tool.setIcon(getIcon(tool.getId()));
+			tool.setDevelopers(getDevelopers(tool.getId()));
+			tool.setWishMaster(getWishMaster(tool.getId()));
+			tool.setWishers(getWishers(tool.getId()));
+			tool.setCategories(getCategories(tool.getId()));
+			tool.setCategoryString();
+			tool.setReviews(getReviews(tool.getId()));
+			tool.setCurrentVersion(getCurrentVersion(tool.getId()));
+			tool.setVersions(getVersions(tool.getId()));
+			tool.setMedias(getMedias(tool.getId()));
+			tool.setTags(getTags(tool.getId()));
+			tool.setStatus(resultSet.getString(9));
+			tool.setUpvotes(resultSet.getInt(10));
+			tool.setVoted(checkUserUpvote(tool.getId(), username));;
+			tools.add(tool);
+			while (resultSet.next()) {
+				tool = new Tool();
+				tool.setId(resultSet.getInt(1));
+				tool.setName(resultSet.getString(2));
+				tool.setDescription(resultSet.getString(3));
+				tool.setText(resultSet.getString(4));
+				tool.setLaunchDate(resultSet.getDate(5));
+				tool.setUpdateDate(resultSet.getDate(6));
+				tool.setDownloads(resultSet.getInt(7));
+				tool.setRating(resultSet.getFloat(8));
+				tool.setIcon(getIcon(tool.getId()));
+				tool.setDevelopers(getDevelopers(tool.getId()));
+				tool.setWishMaster(getWishMaster(tool.getId()));
+				tool.setWishers(getWishers(tool.getId()));
+				tool.setCategories(getCategories(tool.getId()));
+				tool.setCategoryString();
+				tool.setReviews(getReviews(tool.getId()));
+				tool.setCurrentVersion(getCurrentVersion(tool.getId()));
+				tool.setVersions(getVersions(tool.getId()));
+				tool.setMedias(getMedias(tool.getId()));
+				tool.setTags(getTags(tool.getId()));
+				tool.setStatus(resultSet.getString(9));
+				tool.setUpvotes(resultSet.getInt(10));
+				tool.setVoted(checkUserUpvote(tool.getId(), username));;
+				tools.add(tool);
+			}
+			return tools;
+		}
+		return null;
+	}
+	
+	/*
+	@RequestMapping(value = "/add/idea/category", method = RequestMethod.POST)
+	@CrossOrigin(origins="*")
+	//ayaw gumana nung dalawang request body parameter
+	public boolean addIdeaCategory(@RequestBody Tool tool, Integer categoryId) throws ClassNotFoundException, SQLException {
+		int toolId = addIdea(tool);
+		if(toolId == 0) {
+			return false;
+		}
+		
+		ToolCategory tCategory = new ToolCategory(toolId, categoryId);
+		
+		boolean categoryReturn = addToolCategories(tCategory);
+		if(categoryReturn == false) {
+			return false;
+		}
+		
+		return true;
+
+	}
+	*/
+	
 	@RequestMapping(value = "/add/idea", method = RequestMethod.POST)
 	@CrossOrigin(origins="*")
-	public boolean addPerson(@RequestBody Tool tool) throws ClassNotFoundException, SQLException {
+	public int addIdea(@RequestBody Tool tool) throws ClassNotFoundException, SQLException {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		
@@ -1012,11 +1149,57 @@ public class ToolController {
 			preparedStatement = connection.prepareStatement(
 					"INSERT INTO tools "
 					+ "(name, description, status, idea_author) "
-					+ "VALUES(?, ?, ?, ?)");
+					+ "VALUES(?, ?, ?, ?)", 
+				    Statement.RETURN_GENERATED_KEYS);
 			preparedStatement.setString(1, tool.getName());
 			preparedStatement.setString(2, tool.getDescription());
 			preparedStatement.setString(3, "idea");
 			preparedStatement.setString(4, tool.getIdeaAuthor());
+			int affectedRows = preparedStatement.executeUpdate();
+			
+	        if (affectedRows == 0) {
+	        	return 0;
+	        } 
+	        
+	        try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+	            if (generatedKeys.next()) {
+	            	return generatedKeys.getInt(1);
+	            }
+	            else {
+	            	return 0;
+	            }
+	        }
+	        
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+			return 0;
+		} finally {
+			if (preparedStatement != null) {
+				preparedStatement.close();
+			}
+			if (connection != null) {
+				connection.close();
+			}
+		}
+
+	}
+	
+	
+	@RequestMapping(value = "/add/category", method = RequestMethod.POST)
+	@CrossOrigin(origins="*")
+	public boolean addToolCategories(@RequestBody ToolCategory toolCategory) throws ClassNotFoundException, SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		
+		try {
+			connection = ConnectionProvider.getConnection();
+			preparedStatement = connection.prepareStatement(
+					"INSERT INTO tool_categories "
+					+ "(tool_id, category_id) "
+					+ "VALUES(?, ?)");
+			preparedStatement.setInt(1, toolCategory.getToolId());
+			preparedStatement.setInt(2, toolCategory.getCategoryId());
+			
 			int affectedRows = preparedStatement.executeUpdate();
 	        if (affectedRows == 0) {
 	        	return false;
@@ -1034,7 +1217,7 @@ public class ToolController {
 			}
 		}
 		return true;
-
 	}
+	
 	
 }

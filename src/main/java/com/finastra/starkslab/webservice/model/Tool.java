@@ -34,6 +34,7 @@ public class Tool {
 	private String ideaAuthor;
 	private String status;
 	private int upvotes;
+	private boolean isVoted;
 
 
 	public Tool() {
@@ -267,5 +268,15 @@ public class Tool {
 	public void setIdeaAuthor(String ideaAuthor) {
 		this.ideaAuthor = ideaAuthor;
 	}
+
+	public boolean isVoted() {
+		return isVoted;
+	}
+
+	public void setVoted(boolean isVoted) {
+		this.isVoted = isVoted;
+	}
+	
+	
 	
 }
