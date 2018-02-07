@@ -37,7 +37,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, type, download_count, rating_average "
+				"select id, name, description, text, launch_date, update_date, type, download_count, rating_average, instructions "
 				+ "from view_tools_001 "
 				+ "where id = ?");
 		preparedStatement.setInt(1, toolId);
@@ -53,6 +53,7 @@ public class ToolController {
 			tool.setType(resultSet.getString(7));
 			tool.setDownloads(resultSet.getInt(8));
 			tool.setRating(resultSet.getFloat(9));
+			tool.setInstructions(resultSet.getString(10));
 			tool.setIcon(getIcon(toolId));
 			tool.setDevelopers(getDevelopers(toolId));
 			tool.setWishMaster(getWishMaster(toolId));
@@ -520,7 +521,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count, idea_author "
 						+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ? and a.status = ?) a ");
 		preparedStatement.setInt(1, categoryId);
 		preparedStatement.setString(2, status);
@@ -537,7 +538,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+						"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count, idea_author "
 						+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a inner join tool_categories b on a.id = b.tool_id, (select @row_index := 0) c where b.category_id = ? and a.status = ?) a ");
 		preparedStatement.setInt(1, categoryId);
 		preparedStatement.setString(2, status);
@@ -554,7 +555,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count, idea_author "
 				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b order by a.rating_average desc) a ");
 		ResultSet resultSet = preparedStatement.executeQuery();
 		List<Tool> tools = populateToolList(resultSet);
@@ -569,7 +570,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count, idea_author "
 				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b WHERE status = ? order by a.rating_average desc) a ");
 		preparedStatement.setString(1, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -585,7 +586,7 @@ public class ToolController {
 		Connection connection = ConnectionProvider.getConnection();
 		PreparedStatement preparedStatement;
 		preparedStatement = connection.prepareStatement(
-				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count "
+				"select id, name, description, text, launch_date, update_date, download_count, rating_average, status, upvote_count, idea_author "
 				+ "from (select a.*, @row_index := @row_index + 1 as row_index from view_tools_001 a, (select @row_index := 0) b WHERE status = ? order by a.rating_average desc) a ");
 		preparedStatement.setString(1, status);
 		ResultSet resultSet = preparedStatement.executeQuery();
@@ -1027,6 +1028,7 @@ public class ToolController {
 			tool.setTags(getTags(tool.getId()));
 			tool.setStatus(resultSet.getString(9));
 			tool.setUpvotes(resultSet.getInt(10));
+			tool.setIdeaAuthor(resultSet.getString(11));
 			tools.add(tool);
 			while (resultSet.next()) {
 				tool = new Tool();
@@ -1051,6 +1053,7 @@ public class ToolController {
 				tool.setTags(getTags(tool.getId()));
 				tool.setStatus(resultSet.getString(9));
 				tool.setUpvotes(resultSet.getInt(10));
+				tool.setIdeaAuthor(resultSet.getString(11));
 				tools.add(tool);
 			}
 			return tools;
@@ -1083,7 +1086,8 @@ public class ToolController {
 			tool.setTags(getTags(tool.getId()));
 			tool.setStatus(resultSet.getString(9));
 			tool.setUpvotes(resultSet.getInt(10));
-			tool.setVoted(checkUserUpvote(tool.getId(), username));;
+			tool.setVoted(checkUserUpvote(tool.getId(), username));
+			tool.setIdeaAuthor(resultSet.getString(11));
 			tools.add(tool);
 			while (resultSet.next()) {
 				tool = new Tool();
@@ -1108,7 +1112,8 @@ public class ToolController {
 				tool.setTags(getTags(tool.getId()));
 				tool.setStatus(resultSet.getString(9));
 				tool.setUpvotes(resultSet.getInt(10));
-				tool.setVoted(checkUserUpvote(tool.getId(), username));;
+				tool.setVoted(checkUserUpvote(tool.getId(), username));
+				tool.setIdeaAuthor(resultSet.getString(11));
 				tools.add(tool);
 			}
 			return tools;

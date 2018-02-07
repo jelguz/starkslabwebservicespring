@@ -35,6 +35,7 @@ public class Tool {
 	private String status;
 	private int upvotes;
 	private boolean isVoted;
+	private String instructions;
 
 
 	public Tool() {
@@ -43,7 +44,7 @@ public class Tool {
 	public Tool(int id, String name, String description, Icon icon, String text, List<Person> developers,
 			Person wishMaster, List<Person> wishers, List<Category> categories, List<Review> reviews, float rating, Date launchDate,
 			Date updateDate, Version currentVersion, List<Version> versions, List<Media> medias, String[] tags, int downloads, String type,
-			String ideaAuthor, String status, int upvotes) {
+			String ideaAuthor, String status, int upvotes, String instructions) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -67,6 +68,7 @@ public class Tool {
 		this.ideaAuthor = ideaAuthor;
 		this.status = status;
 		this.upvotes = upvotes;
+		this.instructions = instructions;
 	}
 
 	public int getId() {
@@ -275,6 +277,14 @@ public class Tool {
 
 	public void setVoted(boolean isVoted) {
 		this.isVoted = isVoted;
+	}
+
+	public String getInstructions() {
+		return instructions;
+	}
+
+	public void setInstructions(String instructions) {
+		this.instructions = instructions;
 	}
 	
 	
